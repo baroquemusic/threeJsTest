@@ -61451,6 +61451,8 @@ const exrLoader = new three_examples_jsm_loaders_EXRLoader_js__WEBPACK_IMPORTED_
 
 fbxLoader.load( _assets_grandCaravan_fbx__WEBPACK_IMPORTED_MODULE_4__, function ( grandCaravan ) {
 
+	grandCaravan.scale.multiplyScalar(0.35);
+
 	scene.add( grandCaravan );
 
 }, undefined, function ( error ) {
@@ -61498,4 +61500,4 @@ console.log('>>>>>>> app.js <<<<<<<');
 
 /******/ })()
 ;
-//# sourceMappingURL=main.c9df580f4e034b745004.js.map
+//# sourceMappingURL=main.f4f59db7dbf7482a1d51.js.map

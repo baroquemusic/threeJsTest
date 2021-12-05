@@ -20,6 +20,8 @@ const exrLoader = new EXRLoader();
 
 fbxLoader.load( grandCaravan, function ( grandCaravan ) {
 
+	grandCaravan.scale.multiplyScalar(0.35);
+
 	scene.add( grandCaravan );
 
 }, undefined, function ( error ) {
