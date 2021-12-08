@@ -15,16 +15,24 @@ import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js'
 
 import grandCaravan from './assets/grandCaravan.glb'
 
-import uav from './assets/uav.glb'
+import unmannedAerialVehicle from './assets/uav.glb'
 
 import hdri from './assets/hdri_2k.exr'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
+import { LoadingManager } from 'three'
+
+import { TWEEN } from 'three/examples/jsm/libs/tween.module.min'
+
+
+const manager = new LoadingManager()
 
 const scene = new THREE.Scene()
 
-const gltfLoader = new GLTFLoader()
+const gltfLoader = new GLTFLoader(manager)
 
-const exrLoader = new EXRLoader()
+const exrLoader = new EXRLoader(manager)
+
+manager.onLoad = function() { startShow() }
 
 const texture = exrLoader.load(
 	hdri,
@@ -37,28 +45,7 @@ const texture = exrLoader.load(
 const light = new THREE.AmbientLight( 0xdddddd )
 scene.add( light )
 
-const propgeo = new THREE.CircleGeometry( 1.5, 32 )
-const propmat = new THREE.MeshBasicMaterial( { color: 0x000000 } )
-propmat.side = THREE.DoubleSide
-propmat.transparent = true
-propmat.opacity = .35
-const prop = new THREE.Mesh( propgeo, propmat )
-prop.position.x = -6.25
-prop.position.y = .4
-prop.rotation.y = Math.PI / 2
-const uprop = prop.clone()
-uprop.position.x = -2.6
-uprop.position.y = 0
-uprop.position.z = -4.3
-uprop.scale.x = .7
-uprop.scale.y = .7
-uprop.rotation.y = Math.PI / 2
-scene.add( prop )
-//scene.add( uprop )
-
 gltfLoader.load( grandCaravan, function ( gC ) {
-
-	gC.scene.position.set( 0, 0, 0 )
 
 	scene.add( gC.scene )
 
@@ -68,21 +55,38 @@ gltfLoader.load( grandCaravan, function ( gC ) {
 
 } )
 
-gltfLoader.load( uav, function ( u ) {
+var uav
 
-	u.scene.position.set( -2, 0, -2.1 )
+gltfLoader.load( unmannedAerialVehicle, function ( u ) {
 
-	const uavg = new THREE.Group()
-	uavg.add( u.scene )
-	uavg.add( uprop )
+	uav = u.scene
 
-	scene.add( uavg )
+	scene.add( uav )
 
 }, undefined, function ( error ) {
 
 	console.error( error )
 
 } )
+
+
+function startShow() {
+
+	var uavpos = { z: 0 }
+
+	var uavtween = new TWEEN.Tween(uavpos)
+
+	uavtween.to({ z: -10 }, 10000)
+
+	uavtween.start()
+
+	uavtween.onUpdate(function (obj) {
+		uav.position.z = obj.z
+	})
+
+	animate()
+}
+
 
 const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 1000 )
 
@@ -125,9 +129,10 @@ camera.position.z = -20
 
 function animate() {
 	requestAnimationFrame( animate )
+	TWEEN.update()
 	controls.update()
 	renderer.render( scene, camera )
 	composer.render()
 }
 
-animate()
+
