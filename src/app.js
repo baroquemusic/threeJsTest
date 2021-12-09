@@ -42,12 +42,30 @@ const texture = exrLoader.load(
 		scene.background = rendertarget.texture
 	})
 
-const light = new THREE.AmbientLight( 0xdddddd )
+const light = new THREE.AmbientLight( 0xffffff, 1000 )
 scene.add( light )
 
-gltfLoader.load( grandCaravan, function ( gC ) {
+var matProp = new THREE.MeshLambertMaterial( { color: 0x000000, transparent: true, opacity: .3 } )
 
-	scene.add( gC.scene )
+var gc
+
+gltfLoader.load( grandCaravan, function ( g ) {
+
+	gc = g.scene
+
+	gc.children[36].material = matProp
+
+	var glass = new THREE.MeshPhysicalMaterial( {
+		color: 0x0088c2, // transparent: true, opacity: .5,
+		roughness: 0, metalness: 1, reflectivity: 1,
+		emissive: 0x555555
+	} )
+
+	gc.children[31].material = glass
+
+	console.log(gc.children)
+
+	scene.add( gc )
 
 }, undefined, function ( error ) {
 
@@ -61,6 +79,10 @@ gltfLoader.load( unmannedAerialVehicle, function ( u ) {
 
 	uav = u.scene
 
+	uav.children[4].material = matProp
+
+	console.log(uav.children)
+
 	scene.add( uav )
 
 }, undefined, function ( error ) {
@@ -69,7 +91,6 @@ gltfLoader.load( unmannedAerialVehicle, function ( u ) {
 
 } )
 
-
 function startShow() {
 
 	var uavpos = { z: 0 }
@@ -77,6 +98,8 @@ function startShow() {
 	var uavtween = new TWEEN.Tween(uavpos)
 
 	uavtween.to({ z: -10 }, 10000)
+
+	uavtween.easing( TWEEN.Easing.Quadratic.InOut )
 
 	uavtween.start()
 
@@ -114,8 +137,8 @@ bloomPass.radius = .25
 bloomPass.renderToScreen = false
 
 composer.addPass( renderPass )
-composer.addPass( fxaaShader )
-composer.addPass( bloomPass )
+// composer.addPass( fxaaShader )
+// composer.addPass( bloomPass )
 
 document.body.appendChild( renderer.domElement )
 
