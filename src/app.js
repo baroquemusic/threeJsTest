@@ -19,10 +19,9 @@ import unmannedAerialVehicle from './assets/uav.glb'
 
 import hdri from './assets/hdri_2k.exr'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
-import { LoadingManager } from 'three'
+import { LoadingManager, Vector3 } from 'three'
 
 import { TWEEN } from 'three/examples/jsm/libs/tween.module.min'
-
 
 const manager = new LoadingManager()
 
@@ -32,88 +31,190 @@ const gltfLoader = new GLTFLoader(manager)
 
 const exrLoader = new EXRLoader(manager)
 
-manager.onLoad = function() { startShow() }
+manager.onLoad = () => { startShow() }
 
 const texture = exrLoader.load(
 	hdri,
 	() => {
 		const rendertarget = new THREE.WebGLCubeRenderTarget(texture.image.height)
 		rendertarget.fromEquirectangularTexture(renderer, texture)
+
 		scene.background = rendertarget.texture
 	})
 
-const light = new THREE.AmbientLight( 0xffffff, 1000 )
-scene.add( light )
+const lightD = new THREE.DirectionalLight( 0xffffff, .6 )
+lightD.position.set( 50, 50, 50 )
+const lightP = new THREE.PointLight( 0xffffff, .6 )
+lightP.position.set( -50, 50, -50 )
+scene.add( lightD )
+scene.add( lightP )
 
-var matProp = new THREE.MeshLambertMaterial( { color: 0x000000, transparent: true, opacity: .3 } )
+var matProp = new THREE.MeshLambertMaterial( { color: 0x000000, transparent: true, opacity: .5 } )
+var matTire = new THREE.MeshLambertMaterial( { color: 0x0e0e0a } )
 
 var gc
+var glass
+var hullPink
+var hullPurple
+var hullYellow
 
-gltfLoader.load( grandCaravan, function ( g ) {
+gltfLoader.load( grandCaravan, ( g ) => {
 
-	gc = g.scene
+		gc = g.scene
 
-	gc.children[36].material = matProp
+		gc.children[36].material = matProp
 
-	var glass = new THREE.MeshPhysicalMaterial( {
-		color: 0x0088c2, // transparent: true, opacity: .5,
-		roughness: 0, metalness: 1, reflectivity: 1,
-		emissive: 0x555555
+		glass = new THREE.MeshPhysicalMaterial({
+			color: 0xffffff, transparent: true, opacity: .7,
+			roughness: 0, metalness: 1,
+			clearcoat: 1, clearcoatRoughness: .4,
+			transmission: 1,
+		})
+
+		hullPink = new THREE.MeshStandardMaterial({
+			color: 0xDD00E7,
+			roughness: .25, metalness: .75
+		})
+
+		hullPurple = new THREE.MeshStandardMaterial({
+			color: 0x140021,
+			roughness: .5, metalness: .5
+		})
+
+		hullYellow = new THREE.MeshStandardMaterial({
+			color: 0xff6400,
+			roughness: 0, metalness: 1
+		})
+
+		gc.children[31].material =
+			gc.children[32].material =
+			gc.children[33].material =
+			gc.children[37].material =
+			glass
+
+		gc.children[16].material =
+			gc.children[3].material =
+			gc.children[4].material =
+			gc.children[5].material =
+			gc.children[11].material =
+			gc.children[19].material =
+			uav.children[1].material =
+			hullPink
+
+		gc.children[0].material =
+			gc.children[1].material =
+			gc.children[2].material =
+			gc.children[6].material =
+			gc.children[7].material =
+			gc.children[8].material =
+			gc.children[9].material =
+			gc.children[10].material =
+			gc.children[13].material =
+			gc.children[14].material =
+			gc.children[15].material =
+			gc.children[20].material =
+			gc.children[21].material =
+			gc.children[22].material =
+			gc.children[23].material =
+			gc.children[24].material =
+			gc.children[28].material =
+			gc.children[29].material =
+			gc.children[30].material =
+			gc.children[34].material =
+			gc.children[35].material =
+			uav.children[0].material =
+			uav.children[2].material =
+			hullPurple
+
+		gc.children[12].material =
+			uav.children[3].material =
+			hullYellow
+
+		gc.children[25].material =
+			gc.children[26].material =
+			gc.children[27].material =
+			matTire
+
+		scene.add(gc)
+
+	}, undefined, ( error ) => {
+
+		console.error(error)
+
 	} )
-
-	gc.children[31].material = glass
-
-	console.log(gc.children)
-
-	scene.add( gc )
-
-}, undefined, function ( error ) {
-
-	console.error( error )
-
-} )
 
 var uav
 
-gltfLoader.load( unmannedAerialVehicle, function ( u ) {
+gltfLoader.load( unmannedAerialVehicle, ( u ) => {
 
-	uav = u.scene
+		uav = u.scene
 
-	uav.children[4].material = matProp
+		uav.children[4].material = matProp
 
-	console.log(uav.children)
+		scene.add(uav)
 
-	scene.add( uav )
+	}, undefined, ( error ) => {
 
-}, undefined, function ( error ) {
+		console.error(error)
 
-	console.error( error )
+	} )
 
-} )
+var uavPos = { z: 0 }
+var cameraPos = ( { x: -15, y: 10, z: -20 } )
+var uavTweening = true
+var cameraTweening = true
 
 function startShow() {
 
-	var uavpos = { z: 0 }
+	const pmremGenerator = new THREE.PMREMGenerator( renderer )
+	glass.envMap =
+	hullPink.envMap =
+	hullPurple.envMap =
+	hullYellow.envMap =
+	pmremGenerator.fromCubemap( texture ).texture
 
-	var uavtween = new TWEEN.Tween(uavpos)
+	//renderer.physicallyCorrectLights = true
+	
+	var uavTween = new TWEEN.Tween( uavPos )
+	var uavDist = -100
+	uavTween.to( { z: uavDist }, 10000 )
+	uavTween.easing( TWEEN.Easing.Quadratic.InOut )
 
-	uavtween.to({ z: -10 }, 10000)
+	var cameraTween = new TWEEN.Tween( cameraPos )
+	cameraTween.to( { x: 100, y: -50, z: -150 }, 10000 )
+	cameraTween.easing( TWEEN.Easing.Quadratic.InOut )
 
-	uavtween.easing( TWEEN.Easing.Quadratic.InOut )
+	uavTween.start()
+	cameraTween.start()
 
-	uavtween.start()
+	uavTween.onUpdate(() => {
+		uav.position.z = uavPos.z
+	})
 
-	uavtween.onUpdate(function (obj) {
-		uav.position.z = obj.z
+	uavTween.onComplete(() => {
+		uavTweening = false
+	})
+
+	cameraTween.onComplete(() => {
+		cameraTweening = false
 	})
 
 	animate()
 }
 
+window.addEventListener('resize', onWindowResize, false)
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight
+    camera.updateProjectionMatrix()
+    renderer.setSize(window.innerWidth, window.innerHeight)
+    animate()
+}
 
 const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 1000 )
 
-const renderer = new THREE.WebGLRenderer()
+camera.position.set( -15, 10, -20 )
+
+const renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } )
 
 renderer.outputEncoding = THREE.sRGBEncoding
 
@@ -137,25 +238,29 @@ bloomPass.radius = .25
 bloomPass.renderToScreen = false
 
 composer.addPass( renderPass )
-// composer.addPass( fxaaShader )
-// composer.addPass( bloomPass )
+composer.addPass( fxaaShader )
+composer.addPass( bloomPass )
 
 document.body.appendChild( renderer.domElement )
 
 const controls = new OrbitControls( camera, renderer.domElement )
 
 controls.enableZoom = false
-
-camera.position.x = -15
-camera.position.y = 10
-camera.position.z = -20
+controls.enableDamping = true
+controls.dampingFactor = .2
 
 function animate() {
 	requestAnimationFrame( animate )
 	TWEEN.update()
+	if ( uavTweening ) {
+		controls.target.z = uavPos.z * .5
+		controls.target.x = -uavPos.z * .2
+		controls.target.y = 0
+	}
+	if ( cameraTweening ) {
+		camera.position.set( cameraPos.x, cameraPos.y, cameraPos.z )
+	}
 	controls.update()
 	renderer.render( scene, camera )
 	composer.render()
 }
-
-
