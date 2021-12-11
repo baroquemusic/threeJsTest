@@ -42,12 +42,12 @@ const texture = exrLoader.load(
 		scene.background = rendertarget.texture
 	})
 
-const lightD = new THREE.DirectionalLight( 0xffffff, .6 )
-lightD.position.set( 50, 50, 50 )
-const lightP = new THREE.PointLight( 0xffffff, .6 )
-lightP.position.set( -50, 50, -50 )
-scene.add( lightD )
-scene.add( lightP )
+// const lightD = new THREE.DirectionalLight( 0xffba00, 0 )
+// lightD.position.set( 50, 50, 50 )
+// const lightP = new THREE.PointLight( 0x00d9ff, 0 )
+// lightP.position.set( -50, 50, -50 )
+// scene.add( lightD )
+// scene.add( lightP )
 
 var matProp = new THREE.MeshLambertMaterial( { color: 0x000000, transparent: true, opacity: .5 } )
 var matTire = new THREE.MeshLambertMaterial( { color: 0x0e0e0a } )
@@ -177,11 +177,11 @@ function startShow() {
 	
 	var uavTween = new TWEEN.Tween( uavPos )
 	var uavDist = -100
-	uavTween.to( { z: uavDist }, 10000 )
+	uavTween.to( { z: uavDist }, 20000 )
 	uavTween.easing( TWEEN.Easing.Quadratic.InOut )
 
 	var cameraTween = new TWEEN.Tween( cameraPos )
-	cameraTween.to( { x: 100, y: -50, z: -150 }, 10000 )
+	cameraTween.to( { x: 100, y: -50, z: -150 }, 20000 )
 	cameraTween.easing( TWEEN.Easing.Quadratic.InOut )
 
 	uavTween.start()
@@ -197,6 +197,8 @@ function startShow() {
 
 	cameraTween.onComplete(() => {
 		cameraTweening = false
+		controls.minPolarAngle = THREE.Math.degToRad( 100 )
+		controls.maxPolarAngle = THREE.Math.degToRad( 180 )
 	})
 
 	animate()
@@ -210,6 +212,8 @@ function onWindowResize() {
     animate()
 }
 
+scene.add( new THREE.AxesHelper( 100 ) )
+
 const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 1000 )
 
 camera.position.set( -15, 10, -20 )
@@ -221,6 +225,37 @@ renderer.outputEncoding = THREE.sRGBEncoding
 renderer.setSize( window.innerWidth, window.innerHeight )
 
 scene.background = new THREE.Color( 0x72ceed )
+
+
+
+
+
+
+
+
+var cableStart = new THREE.Vector3( 0, 0, 0 )
+var cableMid = new THREE.Vector3( 20, 15, 0 )
+var cableEnd = new THREE.Vector3( 10, 0, 0 )
+
+var curve = new THREE.QuadraticBezierCurve3( cableStart, cableMid, cableEnd )
+
+//const points = curve.getPoints( 50 )
+var geometry = new THREE.TubeBufferGeometry( curve, 200, .05, 20, false )
+
+const material = new THREE.LineBasicMaterial( { color: 0x000000 } )
+
+var curveObject = new THREE.Line( geometry, material )
+
+curveObject.matrixAutoUpdate = true
+
+scene.add( curveObject )
+
+
+
+
+
+
+
 
 //////////////// COMPOSER
 
@@ -245,9 +280,11 @@ document.body.appendChild( renderer.domElement )
 
 const controls = new OrbitControls( camera, renderer.domElement )
 
-controls.enableZoom = false
+//controls.enableZoom = false
 controls.enableDamping = true
 controls.dampingFactor = .2
+controls.minDistance = 5
+controls.maxDistance = 200
 
 function animate() {
 	requestAnimationFrame( animate )
@@ -256,6 +293,12 @@ function animate() {
 		controls.target.z = uavPos.z * .5
 		controls.target.x = -uavPos.z * .2
 		controls.target.y = 0
+
+		curveObject.geometry.parameters.path.v2.z = uavPos.z
+		curveObject.updateMatrix()
+
+		console.log(curveObject.geometry.parameters.path.v2)
+		
 	}
 	if ( cameraTweening ) {
 		camera.position.set( cameraPos.x, cameraPos.y, cameraPos.z )

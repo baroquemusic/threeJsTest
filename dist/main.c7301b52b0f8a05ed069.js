@@ -63495,7 +63495,6 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-
 const manager = new three__WEBPACK_IMPORTED_MODULE_13__.LoadingManager()
 
 const scene = new three__WEBPACK_IMPORTED_MODULE_13__.Scene()
@@ -63504,7 +63503,31 @@ const gltfLoader = new three_examples_jsm_loaders_GLTFLoader_js__WEBPACK_IMPORTE
 
 const exrLoader = new three_examples_jsm_loaders_EXRLoader_js__WEBPACK_IMPORTED_MODULE_2__.EXRLoader(manager)
 
-manager.onLoad = function() { startShow() }
+manager.onLoad = () => { startShow() }
+
+
+
+
+const curve = new three__WEBPACK_IMPORTED_MODULE_13__.QuadraticBezierCurve3(
+	new three__WEBPACK_IMPORTED_MODULE_13__.Vector3( -10, 0, 0 ),
+	new three__WEBPACK_IMPORTED_MODULE_13__.Vector3( 20, 15, 0 ),
+	new three__WEBPACK_IMPORTED_MODULE_13__.Vector3( 10, 0, 0 )
+)
+
+//const points = curve.getPoints( 50 )
+const geometry = new three__WEBPACK_IMPORTED_MODULE_13__.TubeBufferGeometry( curve, 200, .05, 20, false )
+
+const material = new three__WEBPACK_IMPORTED_MODULE_13__.LineBasicMaterial( { color: 0x000000 } )
+
+const curveObject = new three__WEBPACK_IMPORTED_MODULE_13__.Line( geometry, material )
+
+scene.add( curveObject )
+
+
+
+
+
+
 
 const texture = exrLoader.load(
 	_assets_hdri_2k_exr__WEBPACK_IMPORTED_MODULE_10__,
@@ -63512,84 +63535,166 @@ const texture = exrLoader.load(
 		const rendertarget = new three__WEBPACK_IMPORTED_MODULE_13__.WebGLCubeRenderTarget(texture.image.height)
 		rendertarget.fromEquirectangularTexture(renderer, texture)
 
-		const pmremGenerator = new three__WEBPACK_IMPORTED_MODULE_13__.PMREMGenerator(renderer)
-
 		scene.background = rendertarget.texture
 	})
 
-const lightD = new three__WEBPACK_IMPORTED_MODULE_13__.DirectionalLight( 0xffffff, .7 )
-lightD.position.set( 50, 50, 50 )
-const lightP = new three__WEBPACK_IMPORTED_MODULE_13__.PointLight(0xffffff, .7)
-lightP.position.set(-50, 50, -50)
-scene.add(lightD)
-scene.add( lightP )
+// const lightD = new THREE.DirectionalLight( 0xffba00, 0 )
+// lightD.position.set( 50, 50, 50 )
+// const lightP = new THREE.PointLight( 0x00d9ff, 0 )
+// lightP.position.set( -50, 50, -50 )
+// scene.add( lightD )
+// scene.add( lightP )
 
-var matProp = new three__WEBPACK_IMPORTED_MODULE_13__.MeshLambertMaterial( { color: 0x000000, transparent: true, opacity: .3 } )
+var matProp = new three__WEBPACK_IMPORTED_MODULE_13__.MeshLambertMaterial( { color: 0x000000, transparent: true, opacity: .5 } )
+var matTire = new three__WEBPACK_IMPORTED_MODULE_13__.MeshLambertMaterial( { color: 0x0e0e0a } )
 
 var gc
 var glass
+var hullPink
+var hullPurple
+var hullYellow
 
-gltfLoader.load( _assets_grandCaravan_glb__WEBPACK_IMPORTED_MODULE_8__, function ( g ) {
+gltfLoader.load( _assets_grandCaravan_glb__WEBPACK_IMPORTED_MODULE_8__, ( g ) => {
 
-	gc = g.scene
+		gc = g.scene
 
-	gc.children[36].material = matProp
+		gc.children[36].material = matProp
 
-	glass = new three__WEBPACK_IMPORTED_MODULE_13__.MeshPhysicalMaterial( {
-		color: 0xffffff, //transparent: true, opacity: .98,
-		roughness: 0, metalness: 1,
-		clearcoat: 1, clearcoatRoughness: .4,
-		transmission: 1,
+		glass = new three__WEBPACK_IMPORTED_MODULE_13__.MeshPhysicalMaterial({
+			color: 0xffffff, transparent: true, opacity: .7,
+			roughness: 0, metalness: 1,
+			clearcoat: 1, clearcoatRoughness: .4,
+			transmission: 1,
+		})
+
+		hullPink = new three__WEBPACK_IMPORTED_MODULE_13__.MeshStandardMaterial({
+			color: 0xDD00E7,
+			roughness: .25, metalness: .75
+		})
+
+		hullPurple = new three__WEBPACK_IMPORTED_MODULE_13__.MeshStandardMaterial({
+			color: 0x140021,
+			roughness: .5, metalness: .5
+		})
+
+		hullYellow = new three__WEBPACK_IMPORTED_MODULE_13__.MeshStandardMaterial({
+			color: 0xff6400,
+			roughness: 0, metalness: 1
+		})
+
+		gc.children[31].material =
+			gc.children[32].material =
+			gc.children[33].material =
+			gc.children[37].material =
+			glass
+
+		gc.children[16].material =
+			gc.children[3].material =
+			gc.children[4].material =
+			gc.children[5].material =
+			gc.children[11].material =
+			gc.children[19].material =
+			uav.children[1].material =
+			hullPink
+
+		gc.children[0].material =
+			gc.children[1].material =
+			gc.children[2].material =
+			gc.children[6].material =
+			gc.children[7].material =
+			gc.children[8].material =
+			gc.children[9].material =
+			gc.children[10].material =
+			gc.children[13].material =
+			gc.children[14].material =
+			gc.children[15].material =
+			gc.children[20].material =
+			gc.children[21].material =
+			gc.children[22].material =
+			gc.children[23].material =
+			gc.children[24].material =
+			gc.children[28].material =
+			gc.children[29].material =
+			gc.children[30].material =
+			gc.children[34].material =
+			gc.children[35].material =
+			uav.children[0].material =
+			uav.children[2].material =
+			hullPurple
+
+		gc.children[12].material =
+			uav.children[3].material =
+			hullYellow
+
+		gc.children[25].material =
+			gc.children[26].material =
+			gc.children[27].material =
+			matTire
+
+		scene.add(gc)
+
+	}, undefined, ( error ) => {
+
+		console.error(error)
+
 	} )
-
-	gc.children[31].material = 
-	gc.children[32].material = 
-	gc.children[33].material = 
-	gc.children[37].material = glass
-
-
-	console.log(gc.children)
-
-	scene.add( gc )
-
-}, undefined, function ( error ) {
-
-	console.error( error )
-
-} )
 
 var uav
 
-gltfLoader.load( _assets_uav_glb__WEBPACK_IMPORTED_MODULE_9__, function ( u ) {
+gltfLoader.load( _assets_uav_glb__WEBPACK_IMPORTED_MODULE_9__, ( u ) => {
 
-	uav = u.scene
+		uav = u.scene
 
-	uav.children[4].material = matProp
+		uav.children[4].material = matProp
 
-	console.log(uav.children)
+		scene.add(uav)
 
-	scene.add( uav )
+	}, undefined, ( error ) => {
 
-}, undefined, function ( error ) {
+		console.error(error)
 
-	console.error( error )
+	} )
 
-} )
+var uavPos = { z: 0 }
+var cameraPos = ( { x: -15, y: 10, z: -20 } )
+var uavTweening = true
+var cameraTweening = true
 
 function startShow() {
 
-	var uavpos = { z: 0 }
+	const pmremGenerator = new three__WEBPACK_IMPORTED_MODULE_13__.PMREMGenerator( renderer )
+	glass.envMap =
+	hullPink.envMap =
+	hullPurple.envMap =
+	hullYellow.envMap =
+	pmremGenerator.fromCubemap( texture ).texture
 
-	var uavtween = new three_examples_jsm_libs_tween_module_min__WEBPACK_IMPORTED_MODULE_12__.TWEEN.Tween(uavpos)
+	//renderer.physicallyCorrectLights = true
+	
+	var uavTween = new three_examples_jsm_libs_tween_module_min__WEBPACK_IMPORTED_MODULE_12__.TWEEN.Tween( uavPos )
+	var uavDist = -100
+	uavTween.to( { z: uavDist }, 10000 )
+	uavTween.easing( three_examples_jsm_libs_tween_module_min__WEBPACK_IMPORTED_MODULE_12__.TWEEN.Easing.Quadratic.InOut )
 
-	uavtween.to({ z: -10 }, 10000)
+	var cameraTween = new three_examples_jsm_libs_tween_module_min__WEBPACK_IMPORTED_MODULE_12__.TWEEN.Tween( cameraPos )
+	cameraTween.to( { x: 100, y: -50, z: -150 }, 10000 )
+	cameraTween.easing( three_examples_jsm_libs_tween_module_min__WEBPACK_IMPORTED_MODULE_12__.TWEEN.Easing.Quadratic.InOut )
 
-	uavtween.easing( three_examples_jsm_libs_tween_module_min__WEBPACK_IMPORTED_MODULE_12__.TWEEN.Easing.Quadratic.InOut )
+	uavTween.start()
+	cameraTween.start()
 
-	uavtween.start()
+	uavTween.onUpdate(() => {
+		uav.position.z = uavPos.z
+	})
 
-	uavtween.onUpdate(function (obj) {
-		uav.position.z = obj.z
+	uavTween.onComplete(() => {
+		uavTweening = false
+	})
+
+	cameraTween.onComplete(() => {
+		cameraTweening = false
+		controls.minPolarAngle = three__WEBPACK_IMPORTED_MODULE_13__.Math.degToRad( 100 )
+		controls.maxPolarAngle = three__WEBPACK_IMPORTED_MODULE_13__.Math.degToRad( 180 )
 	})
 
 	animate()
@@ -63603,8 +63708,11 @@ function onWindowResize() {
     animate()
 }
 
+scene.add( new three__WEBPACK_IMPORTED_MODULE_13__.AxesHelper( 100 ) )
 
 const camera = new three__WEBPACK_IMPORTED_MODULE_13__.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 1000 )
+
+camera.position.set( -15, 10, -20 )
 
 const renderer = new three__WEBPACK_IMPORTED_MODULE_13__.WebGLRenderer( { antialias: true, alpha: true } )
 
@@ -63637,22 +63745,30 @@ document.body.appendChild( renderer.domElement )
 
 const controls = new three_examples_jsm_controls_OrbitControls_js__WEBPACK_IMPORTED_MODULE_3__.OrbitControls( camera, renderer.domElement )
 
-controls.enableZoom = false
-
-camera.position.set( -15, 10, -20 )
+//controls.enableZoom = false
+controls.enableDamping = true
+controls.dampingFactor = .2
+controls.minDistance = 5
+controls.maxDistance = 200
 
 function animate() {
 	requestAnimationFrame( animate )
 	three_examples_jsm_libs_tween_module_min__WEBPACK_IMPORTED_MODULE_12__.TWEEN.update()
+	if ( uavTweening ) {
+		controls.target.z = uavPos.z * .5
+		controls.target.x = -uavPos.z * .2
+		controls.target.y = 0
+	}
+	if ( cameraTweening ) {
+		camera.position.set( cameraPos.x, cameraPos.y, cameraPos.z )
+	}
 	controls.update()
 	renderer.render( scene, camera )
 	composer.render()
 }
 
-
-
 })();
 
 /******/ })()
 ;
-//# sourceMappingURL=main.679095edc9760ee40b0c.js.map
+//# sourceMappingURL=main.c7301b52b0f8a05ed069.js.map
