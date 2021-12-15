@@ -171,17 +171,18 @@ function startShow() {
 	hullPink.envMap =
 	hullPurple.envMap =
 	hullYellow.envMap =
+	cableMat.envMap =
 	pmremGenerator.fromCubemap( texture ).texture
 
 	//renderer.physicallyCorrectLights = true
 	
 	var uavTween = new TWEEN.Tween( uavPos )
 	var uavDist = -100
-	uavTween.to( { z: uavDist }, 20000 )
+	uavTween.to( { z: uavDist }, 10000 )
 	uavTween.easing( TWEEN.Easing.Quadratic.InOut )
 
 	var cameraTween = new TWEEN.Tween( cameraPos )
-	cameraTween.to( { x: 100, y: -50, z: -150 }, 20000 )
+	cameraTween.to( { x: 100, y: -50, z: -150 }, 10000 )
 	cameraTween.easing( TWEEN.Easing.Quadratic.InOut )
 
 	uavTween.start()
@@ -212,7 +213,7 @@ function onWindowResize() {
     animate()
 }
 
-scene.add( new THREE.AxesHelper( 100 ) )
+//scene.add( new THREE.AxesHelper( 100 ) )
 
 const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 1000 )
 
@@ -226,36 +227,24 @@ renderer.setSize( window.innerWidth, window.innerHeight )
 
 scene.background = new THREE.Color( 0x72ceed )
 
+/////////////////// CABLE
 
+var cablePoints = []
+cablePoints.push( new THREE.Vector3( -.8, -.7, -.4 ), new THREE.Vector3( -.8, -.5, -.8 ), new THREE.Vector3( .5, 0, -2) )
 
+var cablePath = new THREE.CatmullRomCurve3( cablePoints )
 
+const cableShape = new THREE.Shape()
+cableShape.moveTo( 0, 0 )
+cableShape.absarc( 0, 0, .1, 0, Math.PI * 2, false )
 
+var cableGeo = new THREE.ExtrudeGeometry( cableShape, { bevelEnabled: false, extrudePath: cablePath } )
 
+var cableMat = new THREE.MeshStandardMaterial( { color: 0x140021, roughness: .5, metalness: .5 } )
 
+var cable = new THREE.Mesh( cableGeo, cableMat )
 
-var cableStart = new THREE.Vector3( 0, 0, 0 )
-var cableMid = new THREE.Vector3( 20, 15, 0 )
-var cableEnd = new THREE.Vector3( 10, 0, 0 )
-
-var curve = new THREE.QuadraticBezierCurve3( cableStart, cableMid, cableEnd )
-
-//const points = curve.getPoints( 50 )
-var geometry = new THREE.TubeBufferGeometry( curve, 200, .05, 20, false )
-
-const material = new THREE.LineBasicMaterial( { color: 0x000000 } )
-
-var curveObject = new THREE.Line( geometry, material )
-
-curveObject.matrixAutoUpdate = true
-
-scene.add( curveObject )
-
-
-
-
-
-
-
+scene.add( cable )
 
 //////////////// COMPOSER
 
@@ -264,6 +253,7 @@ const composer = new EffectComposer( renderer )
 const renderPass = new RenderPass( scene, camera )
 
 const fxaaShader = new ShaderPass( FXAAShader )
+
 fxaaShader.uniforms.resolution.value.set( 1 / window.innerWidth, 1 / window.innerHeight )
 
 const bloomPass = new UnrealBloomPass()
@@ -294,11 +284,15 @@ function animate() {
 		controls.target.x = -uavPos.z * .2
 		controls.target.y = 0
 
-		curveObject.geometry.parameters.path.v2.z = uavPos.z
-		curveObject.updateMatrix()
+		scene.remove( cable )
+		cablePoints[2].z = uavPos.z - 2
+		cablePoints[1].x = uavPos.z * -.1
+		cablePoints[1].z = uavPos.z * .5
 
-		console.log(curveObject.geometry.parameters.path.v2)
+	 	cableGeo = new THREE.ExtrudeBufferGeometry( cableShape, { steps: 200, bevelEnabled: false, extrudePath: cablePath } )
+ 	 	cable = new THREE.Mesh( cableGeo, cableMat )
 		
+	 	scene.add( cable )
 	}
 	if ( cameraTweening ) {
 		camera.position.set( cameraPos.x, cameraPos.y, cameraPos.z )

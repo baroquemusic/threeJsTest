@@ -63505,30 +63505,6 @@ const exrLoader = new three_examples_jsm_loaders_EXRLoader_js__WEBPACK_IMPORTED_
 
 manager.onLoad = () => { startShow() }
 
-
-
-
-const curve = new three__WEBPACK_IMPORTED_MODULE_13__.QuadraticBezierCurve3(
-	new three__WEBPACK_IMPORTED_MODULE_13__.Vector3( -10, 0, 0 ),
-	new three__WEBPACK_IMPORTED_MODULE_13__.Vector3( 20, 15, 0 ),
-	new three__WEBPACK_IMPORTED_MODULE_13__.Vector3( 10, 0, 0 )
-)
-
-//const points = curve.getPoints( 50 )
-const geometry = new three__WEBPACK_IMPORTED_MODULE_13__.TubeBufferGeometry( curve, 200, .05, 20, false )
-
-const material = new three__WEBPACK_IMPORTED_MODULE_13__.LineBasicMaterial( { color: 0x000000 } )
-
-const curveObject = new three__WEBPACK_IMPORTED_MODULE_13__.Line( geometry, material )
-
-scene.add( curveObject )
-
-
-
-
-
-
-
 const texture = exrLoader.load(
 	_assets_hdri_2k_exr__WEBPACK_IMPORTED_MODULE_10__,
 	() => {
@@ -63708,7 +63684,7 @@ function onWindowResize() {
     animate()
 }
 
-scene.add( new three__WEBPACK_IMPORTED_MODULE_13__.AxesHelper( 100 ) )
+//scene.add( new THREE.AxesHelper( 100 ) )
 
 const camera = new three__WEBPACK_IMPORTED_MODULE_13__.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 1000 )
 
@@ -63721,6 +63697,42 @@ renderer.outputEncoding = three__WEBPACK_IMPORTED_MODULE_13__.sRGBEncoding
 renderer.setSize( window.innerWidth, window.innerHeight )
 
 scene.background = new three__WEBPACK_IMPORTED_MODULE_13__.Color( 0x72ceed )
+
+
+
+
+
+
+
+var cablePoints = []
+cablePoints.push( new three__WEBPACK_IMPORTED_MODULE_13__.Vector3( 0, 0, -1 ), new three__WEBPACK_IMPORTED_MODULE_13__.Vector3( 0, 0, -1 ), new three__WEBPACK_IMPORTED_MODULE_13__.Vector3( .5, 0, -2) )
+
+var cablePath = new three__WEBPACK_IMPORTED_MODULE_13__.CatmullRomCurve3( cablePoints )
+
+const cableShape = new three__WEBPACK_IMPORTED_MODULE_13__.Shape()
+cableShape.moveTo( 0, 0 )
+cableShape.absarc( 0, 0, .1, 0, Math.PI*2, false )
+
+var cableGeo = new three__WEBPACK_IMPORTED_MODULE_13__.ExtrudeBufferGeometry( cableShape, { steps: 200, bevelEnabled: false, extrudePath: cablePath } )
+
+var cableMat = new three__WEBPACK_IMPORTED_MODULE_13__.MeshBasicMaterial( { color: 0x000000, wireframe: false } )
+
+var cable = new three__WEBPACK_IMPORTED_MODULE_13__.Mesh( cableGeo, cableMat )
+
+scene.add( cable )
+
+console.log(hullPurple)
+
+
+
+
+
+
+
+
+
+
+
 
 //////////////// COMPOSER
 
@@ -63758,6 +63770,17 @@ function animate() {
 		controls.target.z = uavPos.z * .5
 		controls.target.x = -uavPos.z * .2
 		controls.target.y = 0
+
+		scene.remove( cable )
+		cablePoints[2].z = uavPos.z - 2
+		cablePoints[1].x = uavPos.z * -.1
+		cablePoints[1].z = uavPos.z * .5
+
+	 	cableGeo = new three__WEBPACK_IMPORTED_MODULE_13__.ExtrudeBufferGeometry( cableShape, { steps: 200, bevelEnabled: false, extrudePath: cablePath } )
+ 	 	cable = new three__WEBPACK_IMPORTED_MODULE_13__.Mesh( cableGeo, cableMat )
+		
+	 scene.add( cable )
+
 	}
 	if ( cameraTweening ) {
 		camera.position.set( cameraPos.x, cameraPos.y, cameraPos.z )
@@ -63771,4 +63794,4 @@ function animate() {
 
 /******/ })()
 ;
-//# sourceMappingURL=main.c7301b52b0f8a05ed069.js.map
+//# sourceMappingURL=main.63b188ee86cca0c579dd.js.map
