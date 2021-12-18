@@ -23,6 +23,9 @@ import { LoadingManager, Vector3 } from 'three'
 
 import { TWEEN } from 'three/examples/jsm/libs/tween.module.min'
 
+import sprite from './assets/dot.png'
+import skyPrint from './assets/skycrayon-skyprint-xs.png'
+
 const manager = new LoadingManager()
 
 const scene = new THREE.Scene()
@@ -40,7 +43,7 @@ const texture = exrLoader.load(
 		rendertarget.fromEquirectangularTexture(renderer, texture)
 
 		scene.background = rendertarget.texture
-	})
+} )
 
 // const lightD = new THREE.DirectionalLight( 0xffba00, 0 )
 // lightD.position.set( 50, 50, 50 )
@@ -48,6 +51,120 @@ const texture = exrLoader.load(
 // lightP.position.set( -50, 50, -50 )
 // scene.add( lightD )
 // scene.add( lightP )
+
+///////////////////// PARTICLE SYSTEM
+
+var shaderAttributes
+var particles = []
+var particleSystem
+
+var imageWidth = 500
+var imageHeight = 119
+var imageData = null
+
+function createPixelData() {
+
+	var image = document.createElement('img')
+	var canvas = document.createElement('canvas')
+	var context = canvas.getContext('2d')
+
+	image.onload = () => {
+		image.width = canvas.width = imageWidth
+		image.height = canvas.height = imageHeight
+		context.drawImage( image, 0, 0, imageWidth, imageHeight )
+		imageData = context.getImageData( 0, 0, imageWidth, imageHeight ).data
+		createParticles()
+	}
+
+	image.src = skyPrint
+
+}
+
+function createParticles() {
+
+	var c = 0
+	var geometry, x, y, z
+
+	geometry = new THREE.BufferGeometry()
+	var vertices = new Float64Array( imageWidth * imageHeight * 3 )
+	vertices = [ { x: null, y: null, z: null } ]
+
+	x = imageWidth * -.5
+	y = imageHeight * .5
+	z = 0
+
+		var vertexShader = `
+	attribute vec3 vertexColor;
+	varying vec4 varColor;
+	void main() {
+		varColor = vec4(vertexColor, 1.0);
+		vec4 pos = vec4(position, 1.0);
+		vec4 mvPosition = modelViewMatrix * pos;
+		gl_PointSize = 1.0;
+		gl_Position = projectionMatrix * mvPosition;
+	}
+	`
+
+	var fragmentShader = `
+	varying vec4 varColor;
+	void main()
+	{
+		gl_FragColor = varColor;
+	}
+	`
+
+	shaderAttributes = {
+		vertexColor: {
+			type: 'c',
+			value: []
+		}
+	}
+
+	var shaderMaterial  = new THREE.ShaderMaterial( {
+		attributes: shaderAttributes,
+		vertexShader: vertexShader,
+		fragmentShader: fragmentShader
+	} )
+
+	var expandPixels = 2
+
+	for ( var i = 0; i < imageHeight; i++ ) {
+		for ( var j = 0; j < imageWidth; j++ ) {
+
+			var color = new THREE.Color()
+
+			if ( imageData[ c + 3 ] != 1 ) {
+				
+				color.setRGB( imageData[ c ] / 255, imageData[ c + 1 ] / 255, imageData[ c + 2 ] / 255 )
+				
+				shaderAttributes.vertexColor.value.push(color)
+
+				var vertex = new THREE.Vector3()
+
+				vertex.x = x * expandPixels
+				vertex.y = y * expandPixels
+				vertex.z = z
+
+				vertices.push( vertex.x, vertex.y, vertex.z )
+			}
+
+			c += 4
+			x++
+		}
+
+		x = imageWidth * -.5
+		y--
+	}
+
+	console.log( vertices.length )
+	particleSystem = new THREE.ParticleSystem( geometry, shaderMaterial )
+
+	scene.add( particleSystem )
+}
+
+createPixelData()
+
+///////////////////////// SOLIDS
 
 var matProp = new THREE.MeshLambertMaterial( { color: 0x000000, transparent: true, opacity: .5 } )
 var matTire = new THREE.MeshLambertMaterial( { color: 0x0e0e0a } )

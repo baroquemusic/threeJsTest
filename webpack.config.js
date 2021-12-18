@@ -29,7 +29,7 @@ module.exports = {
   },
   plugins: [
     new HtmlWebpackPlugin({
-      title: 'Three.js test',
+      title: 'SkyCrayon Demo Flight',
       filename: 'index.html',
       template: path.resolve(__dirname, 'src/template.html')
     })
