@@ -50402,16 +50402,6 @@ if ( typeof window !== 'undefined' ) {
 
 /***/ }),
 
-/***/ "./src/assets/dot.png":
-/*!****************************!*\
-  !*** ./src/assets/dot.png ***!
-  \****************************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-module.exports = __webpack_require__.p + "dot.png";
-
-/***/ }),
-
 /***/ "./src/assets/favicon.ico":
 /*!********************************!*\
   !*** ./src/assets/favicon.ico ***!
@@ -50449,6 +50439,16 @@ module.exports = __webpack_require__.p + "hdri_2k.exr";
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
 module.exports = __webpack_require__.p + "skycrayon-skyprint-xs.png";
+
+/***/ }),
+
+/***/ "./src/assets/smoke.png":
+/*!******************************!*\
+  !*** ./src/assets/smoke.png ***!
+  \******************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+module.exports = __webpack_require__.p + "smoke.png";
 
 /***/ }),
 
@@ -63490,7 +63490,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _assets_hdri_2k_exr__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./assets/hdri_2k.exr */ "./src/assets/hdri_2k.exr");
 /* harmony import */ var three_examples_jsm_postprocessing_ShaderPass__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! three/examples/jsm/postprocessing/ShaderPass */ "./node_modules/three/examples/jsm/postprocessing/ShaderPass.js");
 /* harmony import */ var three_examples_jsm_libs_tween_module_min__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! three/examples/jsm/libs/tween.module.min */ "./node_modules/three/examples/jsm/libs/tween.module.min.js");
-/* harmony import */ var _assets_dot_png__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./assets/dot.png */ "./src/assets/dot.png");
+/* harmony import */ var _assets_smoke_png__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./assets/smoke.png */ "./src/assets/smoke.png");
 /* harmony import */ var _assets_skycrayon_skyprint_xs_png__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./assets/skycrayon-skyprint-xs.png */ "./src/assets/skycrayon-skyprint-xs.png");
 
 
@@ -63548,8 +63548,7 @@ const texture = exrLoader.load(
 
 ///////////////////// PARTICLE SYSTEM
 
-var shaderAttributes
-var particles = []
+//var shaderAttributes
 var particleSystem
 
 var imageWidth = 500
@@ -63570,66 +63569,67 @@ function createPixelData() {
 		createParticles()
 	}
 
-	image.src = /* non-default import from non-esm module */undefined
+	image.src = _assets_skycrayon_skyprint_xs_png__WEBPACK_IMPORTED_MODULE_14__
+
 }
 
 function createParticles() {
 
-	var c = 0
-	var geometry
-	var x, y, z
+	// var vertexShader = `
+	// attribute vec3 vertexColor;
+	// varying vec4 varColor;
+	// void main() {
+	// 	varColor = vec4(vertexColor, 1.0);
+	// 	vec4 pos = vec4(position, 1.0);
+	// 	vec4 mvPosition = modelViewMatrix * pos;
+	// 	gl_PointSize = 1.0;
+	// 	gl_Position = projectionMatrix * mvPosition;
+	// }
+	// `
 
-	geometry = new three__WEBPACK_IMPORTED_MODULE_15__.Geometry()
+	// var fragmentShader = `
+	// varying vec4 varColor;
+	// void main()
+	// {
+	// 	gl_FragColor = varColor;
+	// }
+	// `
+
+	var c = 0
+	var geometry, x, y, z
+
+	const bufferSize = imageWidth * imageHeight * 3
+	geometry = new three__WEBPACK_IMPORTED_MODULE_15__.BufferGeometry()
+	var vertices = new Float32Array( bufferSize )
+	vertices = []
+	var colors = new Float32Array( bufferSize )
+	colors = []
+	var color = new three__WEBPACK_IMPORTED_MODULE_15__.Color()
 
 	x = imageWidth * -.5
 	y = imageHeight * .5
 	z = 0
 
-	shaderAttributes = {
-		vertexColor: {
-			type: 'c',
-			value: []
-		}
-	}
+	const spriteLoader = new three__WEBPACK_IMPORTED_MODULE_15__.TextureLoader()
 
-	vertexShader = `
-	attribute vec3 vertexColor;
-	varying vec4 varColor;
-	void main() {
-		varColor = vec4(vertexColor, 1.0);
-		vec4 pos = vec4(position, 1.0);
-		vec4 mvPosition = modelViewMatrix * pos;
-		gl_PointSize = 1.0;
-		gl_Position = projectionMatrix * mvPosition;
-	}
-	`
-
-	fragmentShader = `
-	varying vec4 varColor;
-	void main()
-	{
-		gl_FragColor = varColor;
-	}
-	`
-
-	var shaderMaterial  = new three__WEBPACK_IMPORTED_MODULE_15__.ShaderMaterial( {
-		attributes: shaderAttributes,
-		vertexShader: vertexShader,
-		fragmentShader: fragmentShader
+	var shaderMaterial  = new three__WEBPACK_IMPORTED_MODULE_15__.PointsMaterial( {
+		transparent: true,
+		depthTest: false,
+		premultipliedAlpha: true,
+		vertexColors: true,
+		size: 3,
+		map: spriteLoader.load( _assets_smoke_png__WEBPACK_IMPORTED_MODULE_13__ )
 	} )
 
-	var expandPixels = 2
+	var expandPixels = 1
 
 	for ( var i = 0; i < imageHeight; i++ ) {
 		for ( var j = 0; j < imageWidth; j++ ) {
+			if ( imageData[ c + 3 ] > 0 ) {
 
-			var color = new three__WEBPACK_IMPORTED_MODULE_15__.Color()
-
-			if ( imageData[ c + 3 ] != 1 ) {
-				
 				color.setRGB( imageData[ c ] / 255, imageData[ c + 1 ] / 255, imageData[ c + 2 ] / 255 )
-				
-				shaderAttributes.vertexColor.value.push(color)
+		
+				colors.push( color.r, color.g, color.b )
 
 				var vertex = new three__WEBPACK_IMPORTED_MODULE_15__.Vector3()
 
@@ -63637,19 +63637,21 @@ function createParticles() {
 				vertex.y = y * expandPixels
 				vertex.z = z
 
-				geometry.vertices.push(vertex)
+				vertices.push( vertex.x, vertex.y, vertex.z )
 			}
-
 			c += 4
 			x++
 		}
-
 		x = imageWidth * -.5
 		y--
 	}
 
-	console.log( geometry.vertices.length )
-	particleSystem = new three__WEBPACK_IMPORTED_MODULE_15__.ParticleSystem( geometry, shaderMaterial )
+	//shaderMaterial.needsUpdate = true
+	geometry.setAttribute( 'color', new three__WEBPACK_IMPORTED_MODULE_15__.Float32BufferAttribute( colors, 3 ))
+	geometry.setAttribute( 'position', new three__WEBPACK_IMPORTED_MODULE_15__.Float32BufferAttribute( vertices, 3 ) )
+	geometry.computeBoundingSphere()
+	
+	particleSystem = new three__WEBPACK_IMPORTED_MODULE_15__.Points( geometry, shaderMaterial )
 
 	scene.add( particleSystem )
 }
@@ -63744,7 +63746,7 @@ gltfLoader.load( _assets_grandCaravan_glb__WEBPACK_IMPORTED_MODULE_8__, ( g ) =>
 			gc.children[27].material =
 			matTire
 
-		scene.add(gc)
+		//scene.add(gc)
 
 	}, undefined, ( error ) => {
 
@@ -63760,7 +63762,7 @@ gltfLoader.load( _assets_uav_glb__WEBPACK_IMPORTED_MODULE_9__, ( u ) => {
 
 		uav.children[4].material = matProp
 
-		scene.add(uav)
+		//scene.add(uav)
 
 	}, undefined, ( error ) => {
 
@@ -63805,11 +63807,11 @@ function startShow() {
 		uavTweening = false
 	})
 
-	cameraTween.onComplete(() => {
-		cameraTweening = false
-		controls.minPolarAngle = three__WEBPACK_IMPORTED_MODULE_15__.Math.degToRad( 100 )
-		controls.maxPolarAngle = three__WEBPACK_IMPORTED_MODULE_15__.Math.degToRad( 180 )
-	})
+	// cameraTween.onComplete(() => {
+	// 	cameraTweening = false
+	// 	controls.minPolarAngle = THREE.Math.degToRad( 100 )
+	// 	controls.maxPolarAngle = THREE.Math.degToRad( 180 )
+	// })
 
 	animate()
 }
@@ -63822,7 +63824,7 @@ function onWindowResize() {
     animate()
 }
 
-//scene.add( new THREE.AxesHelper( 100 ) )
+scene.add( new three__WEBPACK_IMPORTED_MODULE_15__.AxesHelper( 100 ) )
 
 const camera = new three__WEBPACK_IMPORTED_MODULE_15__.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 1000 )
 
@@ -63839,7 +63841,7 @@ scene.background = new three__WEBPACK_IMPORTED_MODULE_15__.Color( 0x72ceed )
 /////////////////// CABLE
 
 var cablePoints = []
-cablePoints.push( new three__WEBPACK_IMPORTED_MODULE_15__.Vector3( -.8, -.7, -.4 ), new three__WEBPACK_IMPORTED_MODULE_15__.Vector3( -.8, -.5, -.8 ), new three__WEBPACK_IMPORTED_MODULE_15__.Vector3( .5, 0, -2) )
+cablePoints.push( new three__WEBPACK_IMPORTED_MODULE_15__.Vector3( -.8, -.6, -.8 ), new three__WEBPACK_IMPORTED_MODULE_15__.Vector3( -.8, -.3, -1.2 ), new three__WEBPACK_IMPORTED_MODULE_15__.Vector3( .5, 0, -2) )
 
 var cablePath = new three__WEBPACK_IMPORTED_MODULE_15__.CatmullRomCurve3( cablePoints )
 
@@ -63853,7 +63855,7 @@ var cableMat = new three__WEBPACK_IMPORTED_MODULE_15__.MeshStandardMaterial( { c
 
 var cable = new three__WEBPACK_IMPORTED_MODULE_15__.Mesh( cableGeo, cableMat )
 
-scene.add( cable )
+//scene.add( cable )
 
 //////////////// COMPOSER
 
@@ -63871,29 +63873,29 @@ bloomPass.strength = .25
 bloomPass.radius = .25
 bloomPass.renderToScreen = false
 
-composer.addPass( renderPass )
-composer.addPass( fxaaShader )
-composer.addPass( bloomPass )
+// composer.addPass( renderPass )
+// composer.addPass( fxaaShader )
+// composer.addPass( bloomPass )
 
 document.body.appendChild( renderer.domElement )
 
 const controls = new three_examples_jsm_controls_OrbitControls_js__WEBPACK_IMPORTED_MODULE_3__.OrbitControls( camera, renderer.domElement )
 
 //controls.enableZoom = false
-controls.enableDamping = true
-controls.dampingFactor = .2
-controls.minDistance = 5
-controls.maxDistance = 200
+// controls.enableDamping = true
+// controls.dampingFactor = .2
+// controls.minDistance = 5
+// controls.maxDistance = 200
 
 function animate() {
 	requestAnimationFrame( animate )
 	three_examples_jsm_libs_tween_module_min__WEBPACK_IMPORTED_MODULE_12__.TWEEN.update()
 	if ( uavTweening ) {
-		controls.target.z = uavPos.z * .5
-		controls.target.x = -uavPos.z * .2
-		controls.target.y = 0
+		// controls.target.z = uavPos.z * .5
+		// controls.target.x = -uavPos.z * .2
+		// controls.target.y = 0
 
-		scene.remove( cable )
+		//scene.remove( cable )
 		cablePoints[2].z = uavPos.z - 2
 		cablePoints[1].x = uavPos.z * -.1
 		cablePoints[1].z = uavPos.z * .5
@@ -63901,10 +63903,10 @@ function animate() {
 	 	cableGeo = new three__WEBPACK_IMPORTED_MODULE_15__.ExtrudeBufferGeometry( cableShape, { steps: 200, bevelEnabled: false, extrudePath: cablePath } )
  	 	cable = new three__WEBPACK_IMPORTED_MODULE_15__.Mesh( cableGeo, cableMat )
 		
-	 	scene.add( cable )
+	 	//scene.add( cable )
 	}
 	if ( cameraTweening ) {
-		camera.position.set( cameraPos.x, cameraPos.y, cameraPos.z )
+	//	camera.position.set( cameraPos.x, cameraPos.y, cameraPos.z )
 	}
 	controls.update()
 	renderer.render( scene, camera )
@@ -63915,4 +63917,4 @@ function animate() {
 
 /******/ })()
 ;
-//# sourceMappingURL=main.2f67b2c474fee28c2288.js.map
+//# sourceMappingURL=main.5371e46b439f0f5f378b.js.map

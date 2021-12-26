@@ -23,7 +23,7 @@ import { LoadingManager, Vector3 } from 'three'
 
 import { TWEEN } from 'three/examples/jsm/libs/tween.module.min'
 
-import sprite from './assets/dot.png'
+import sprite from './assets/smoke.png'
 import skyPrint from './assets/skycrayon-skyprint-xs.png'
 
 const manager = new LoadingManager()
@@ -54,8 +54,6 @@ const texture = exrLoader.load(
 
 ///////////////////// PARTICLE SYSTEM
 
-var shaderAttributes
-var particles = []
 var particleSystem
 
 var imageWidth = 500
@@ -85,59 +83,38 @@ function createParticles() {
 	var c = 0
 	var geometry, x, y, z
 
+	const bufferSize = imageWidth * imageHeight * 3
 	geometry = new THREE.BufferGeometry()
-	var vertices = new Float64Array( imageWidth * imageHeight * 3 )
-	vertices = [ { x: null, y: null, z: null } ]
+	var vertices = new Float32Array( bufferSize )
+	vertices = []
+	var colors = new Float32Array( bufferSize )
+	colors = []
+	var color = new THREE.Color()
 
 	x = imageWidth * -.5
 	y = imageHeight * .5
 	z = 0
 
-		var vertexShader = `
-	attribute vec3 vertexColor;
-	varying vec4 varColor;
-	void main() {
-		varColor = vec4(vertexColor, 1.0);
-		vec4 pos = vec4(position, 1.0);
-		vec4 mvPosition = modelViewMatrix * pos;
-		gl_PointSize = 1.0;
-		gl_Position = projectionMatrix * mvPosition;
-	}
-	`
+	const spriteLoader = new THREE.TextureLoader()
 
-	var fragmentShader = `
-	varying vec4 varColor;
-	void main()
-	{
-		gl_FragColor = varColor;
-	}
-	`
-
-	shaderAttributes = {
-		vertexColor: {
-			type: 'c',
-			value: []
-		}
-	}
-
-	var shaderMaterial  = new THREE.ShaderMaterial( {
-		attributes: shaderAttributes,
-		vertexShader: vertexShader,
-		fragmentShader: fragmentShader
+	var shaderMaterial  = new THREE.PointsMaterial( {
+		transparent: true,
+		depthTest: false,
+		premultipliedAlpha: true,
+		vertexColors: true,
+		size: 2,
+		map: spriteLoader.load( sprite )
 	} )
 
-	var expandPixels = 2
+	var expandPixels = .72
 
 	for ( var i = 0; i < imageHeight; i++ ) {
 		for ( var j = 0; j < imageWidth; j++ ) {
+			if ( imageData[ c + 3 ] > 0 ) {
 
-			var color = new THREE.Color()
-
-			if ( imageData[ c + 3 ] != 1 ) {
-				
 				color.setRGB( imageData[ c ] / 255, imageData[ c + 1 ] / 255, imageData[ c + 2 ] / 255 )
-				
-				shaderAttributes.vertexColor.value.push(color)
+		
+				colors.push( color.r, color.g, color.b )
 
 				var vertex = new THREE.Vector3()
 
@@ -147,18 +124,24 @@ function createParticles() {
 
 				vertices.push( vertex.x, vertex.y, vertex.z )
 			}
-
 			c += 4
 			x++
 		}
-
 		x = imageWidth * -.5
 		y--
 	}
 
-	console.log( vertices.length )
-	particleSystem = new THREE.ParticleSystem( geometry, shaderMaterial )
+	//shaderMaterial.needsUpdate = true
+	geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ))
+	geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) )
+	//geometry.computeBoundingSphere()
+	
+	particleSystem = new THREE.Points( geometry, shaderMaterial )
 
+	particleSystem.rotation.x = Math.PI / 2
+	particleSystem.position.x = -180
+	particleSystem.position.z = -55
+	
 	scene.add( particleSystem )
 }
 
@@ -313,11 +296,11 @@ function startShow() {
 		uavTweening = false
 	})
 
-	cameraTween.onComplete(() => {
-		cameraTweening = false
-		controls.minPolarAngle = THREE.Math.degToRad( 100 )
-		controls.maxPolarAngle = THREE.Math.degToRad( 180 )
-	})
+	// cameraTween.onComplete(() => {
+	// 	cameraTweening = false
+	// 	controls.minPolarAngle = THREE.Math.degToRad( 100 )
+	// 	controls.maxPolarAngle = THREE.Math.degToRad( 180 )
+	// })
 
 	animate()
 }
@@ -330,7 +313,7 @@ function onWindowResize() {
     animate()
 }
 
-//scene.add( new THREE.AxesHelper( 100 ) )
+scene.add( new THREE.AxesHelper( 100 ) )
 
 const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 1000 )
 
@@ -347,7 +330,7 @@ scene.background = new THREE.Color( 0x72ceed )
 /////////////////// CABLE
 
 var cablePoints = []
-cablePoints.push( new THREE.Vector3( -.8, -.7, -.4 ), new THREE.Vector3( -.8, -.5, -.8 ), new THREE.Vector3( .5, 0, -2) )
+cablePoints.push( new THREE.Vector3( -.8, -.6, -.8 ), new THREE.Vector3( -.8, -.3, -1.2 ), new THREE.Vector3( .5, 0, -2) )
 
 var cablePath = new THREE.CatmullRomCurve3( cablePoints )
 
@@ -379,27 +362,27 @@ bloomPass.strength = .25
 bloomPass.radius = .25
 bloomPass.renderToScreen = false
 
-composer.addPass( renderPass )
-composer.addPass( fxaaShader )
-composer.addPass( bloomPass )
+// composer.addPass( renderPass )
+// composer.addPass( fxaaShader )
+// composer.addPass( bloomPass )
 
 document.body.appendChild( renderer.domElement )
 
 const controls = new OrbitControls( camera, renderer.domElement )
 
 //controls.enableZoom = false
-controls.enableDamping = true
-controls.dampingFactor = .2
-controls.minDistance = 5
-controls.maxDistance = 200
+// controls.enableDamping = true
+// controls.dampingFactor = .2
+// controls.minDistance = 5
+// controls.maxDistance = 200
 
 function animate() {
 	requestAnimationFrame( animate )
 	TWEEN.update()
 	if ( uavTweening ) {
-		controls.target.z = uavPos.z * .5
-		controls.target.x = -uavPos.z * .2
-		controls.target.y = 0
+		// controls.target.z = uavPos.z * .5
+		// controls.target.x = -uavPos.z * .2
+		// controls.target.y = 0
 
 		scene.remove( cable )
 		cablePoints[2].z = uavPos.z - 2
@@ -412,7 +395,7 @@ function animate() {
 	 	scene.add( cable )
 	}
 	if ( cameraTweening ) {
-		camera.position.set( cameraPos.x, cameraPos.y, cameraPos.z )
+	//	camera.position.set( cameraPos.x, cameraPos.y, cameraPos.z )
 	}
 	controls.update()
 	renderer.render( scene, camera )
