@@ -19,12 +19,13 @@ import unmannedAerialVehicle from './assets/uav.glb'
 
 import hdri from './assets/hdri_2k.exr'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
-import { LoadingManager, Vector3 } from 'three'
+import { AdditiveBlending, LoadingManager, Vector3 } from 'three'
 
 import { TWEEN } from 'three/examples/jsm/libs/tween.module.min'
 
 import sprite from './assets/smoke.png'
 import skyPrint from './assets/skycrayon-skyprint-xs.png'
+import { NormalBlending } from 'three'
 
 const manager = new LoadingManager()
 
@@ -54,10 +55,10 @@ const texture = exrLoader.load(
 
 ///////////////////// PARTICLE SYSTEM
 
-var particleSystem
+let particleSystem
 
-var imageWidth = 500
-var imageHeight = 119
+const imageWidth = 500
+const imageHeight = 119
 var imageData = null
 
 function createPixelData() {
@@ -87,42 +88,51 @@ function createParticles() {
 	geometry = new THREE.BufferGeometry()
 	var vertices = new Float32Array( bufferSize )
 	vertices = []
+	var vertex = new THREE.Vector3()
 	var colors = new Float32Array( bufferSize )
 	colors = []
-	var color = new THREE.Color()
+	var sizes = new Float32Array( bufferSize / 3 )
+	sizes = []
+	var rotations = new Float32Array( bufferSize / 3 )
+	rotations = []
 
 	x = imageWidth * -.5
 	y = imageHeight * .5
 	z = 0
 
-	const spriteLoader = new THREE.TextureLoader()
-
-	var shaderMaterial  = new THREE.PointsMaterial( {
+	var shaderMaterial  = new THREE.ShaderMaterial( {
+		uniforms: {
+			color: { value: new THREE.Color( 0xffffff ) },
+			pointTexture: { value: new THREE.TextureLoader().load( sprite ) }
+		},
+		vertexShader: document.getElementById( 'vertexShader' ).textContent,
+		fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
+		blending: NormalBlending,
 		transparent: true,
-		depthTest: false,
-		premultipliedAlpha: true,
-		vertexColors: true,
-		size: 2,
-		map: spriteLoader.load( sprite )
+		depthTest: false
 	} )
 
-	var expandPixels = .72
+	const expandPixels = .72
 
 	for ( var i = 0; i < imageHeight; i++ ) {
 		for ( var j = 0; j < imageWidth; j++ ) {
 			if ( imageData[ c + 3 ] > 0 ) {
 
-				color.setRGB( imageData[ c ] / 255, imageData[ c + 1 ] / 255, imageData[ c + 2 ] / 255 )
-		
-				colors.push( color.r, color.g, color.b )
-
-				var vertex = new THREE.Vector3()
-
 				vertex.x = x * expandPixels
 				vertex.y = y * expandPixels
 				vertex.z = z
-
 				vertices.push( vertex.x, vertex.y, vertex.z )
+		
+				colors.push(
+					imageData[ c ] / 255,
+					imageData[ c + 1 ] / 255,
+					imageData[ c + 2 ] / 255,
+					1 //Math.random( 100 )
+				)
+
+				rotations.push( Math.random() * Math.PI * 2 )
+
+				sizes.push( 15 )
 			}
 			c += 4
 			x++
@@ -131,10 +141,18 @@ function createParticles() {
 		y--
 	}
 
-	//shaderMaterial.needsUpdate = true
-	geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ))
-	geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) )
+	geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 4 ) )
+	geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 )
+		.setUsage( THREE.DynamicDrawUsage ) )
+	geometry.setAttribute( 'size', new THREE.Float32BufferAttribute( sizes, 1 )
+		.setUsage( THREE.DynamicDrawUsage ) )
+	geometry.setAttribute( 'rotation', new THREE.Float32BufferAttribute( rotations, 1 )
+		.setUsage( THREE.DynamicDrawUsage ) )
+	
 	//geometry.computeBoundingSphere()
+	//geometry.computeBoundingBox()
+	
+	shaderMaterial.needsUpdate = true
 	
 	particleSystem = new THREE.Points( geometry, shaderMaterial )
 
@@ -315,7 +333,7 @@ function onWindowResize() {
 
 scene.add( new THREE.AxesHelper( 100 ) )
 
-const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 1000 )
+const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, .1, 1000 )
 
 camera.position.set( -15, 10, -20 )
 
@@ -330,7 +348,7 @@ scene.background = new THREE.Color( 0x72ceed )
 /////////////////// CABLE
 
 var cablePoints = []
-cablePoints.push( new THREE.Vector3( -.8, -.6, -.8 ), new THREE.Vector3( -.8, -.3, -1.2 ), new THREE.Vector3( .5, 0, -2) )
+cablePoints.push( new THREE.Vector3( -.8, -.6, -.7 ), new THREE.Vector3( -.8, -.3, -1.2 ), new THREE.Vector3( .5, 0, -2) )
 
 var cablePath = new THREE.CatmullRomCurve3( cablePoints )
 
