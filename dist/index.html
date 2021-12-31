@@ -6,7 +6,53 @@
   <link rel="icon" href="/favicon.ico" type="image/x-icon">
   <style> body { margin: 20px 0 0 0; overflow: hidden; } </style>
   <title>SkyCrayon Demo Flight</title>
-<script defer src="main.5371e46b439f0f5f378b.js"></script></head>
+<script defer src="main.d310bb10a054b0539c11.js"></script></head>
+  <script type="x-shader/x-vertex" id="vertexShader">
+
+    attribute float size;
+    attribute float rotation;
+    attribute vec4 color;
+
+    varying vec4 vColor;
+    varying vec2 vRotation;
+
+    void main() {
+
+      vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+
+      gl_Position = projectionMatrix * mvPosition;
+      gl_PointSize = size * ( 100.0 / -mvPosition.z );
+
+      vRotation = vec2( cos( rotation ), sin( rotation ) );
+      vColor = color;
+
+    }
+    
+  </script>
+  <script type="x-shader/x-fragment" id="fragmentShader">
+
+    uniform vec4 color;
+    uniform sampler2D pointTexture;
+
+    varying vec4 vColor;
+    varying vec2 vRotation;
+
+    void main() {
+
+      vec2 rotatedPointCoords = 
+      ( gl_PointCoord - 0.5 ) * mat2( 
+        vRotation.x, 
+        vRotation.y, 
+        -vRotation.y, 
+        vRotation.x
+      ) + 0.5;
+      
+      gl_FragColor = vec4( vColor );
+      gl_FragColor = gl_FragColor * texture2D( pointTexture, rotatedPointCoords );
+
+    }
+
+	</script>
 <body>
 </body>
 </html>

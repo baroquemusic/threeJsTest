@@ -24,7 +24,7 @@ import { AdditiveBlending, LoadingManager, Vector3 } from 'three'
 import { TWEEN } from 'three/examples/jsm/libs/tween.module.min'
 
 import sprite from './assets/smoke.png'
-import skyPrint from './assets/skycrayon-skyprint-xs.png'
+import skyPrint from './assets/skycrayon-skyprint-xxs.png'
 import { NormalBlending } from 'three'
 
 const manager = new LoadingManager()
@@ -53,12 +53,24 @@ const texture = exrLoader.load(
 // scene.add( lightD )
 // scene.add( lightP )
 
+const raycaster = new THREE.Raycaster()
+const pointer = new THREE.Vector2()
+
+window.addEventListener( 'pointermove', onPointerMove, false )
+
+function onPointerMove( event ) {
+
+	pointer.x = ( event.clientX / window.innerWidth ) * 2 - 1
+	pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1
+
+}
+
 ///////////////////// PARTICLE SYSTEM
 
 let particleSystem
 
-const imageWidth = 500
-const imageHeight = 119
+const imageWidth = 209
+const imageHeight = 50
 var imageData = null
 
 function createPixelData() {
@@ -112,7 +124,9 @@ function createParticles() {
 		depthTest: false
 	} )
 
-	const expandPixels = .72
+	//shaderMaterial.uniforms.pointTexture.needsUpdate = true
+
+	const expandPixels = 1.72
 
 	for ( var i = 0; i < imageHeight; i++ ) {
 		for ( var j = 0; j < imageWidth; j++ ) {
@@ -127,7 +141,7 @@ function createParticles() {
 					imageData[ c ] / 255,
 					imageData[ c + 1 ] / 255,
 					imageData[ c + 2 ] / 255,
-					1 //Math.random( 100 )
+					.53 + Math.random() / 10
 				)
 
 				rotations.push( Math.random() * Math.PI * 2 )
@@ -141,7 +155,8 @@ function createParticles() {
 		y--
 	}
 
-	geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 4 ) )
+	geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 4 )
+		.setUsage( THREE.DynamicDrawUsage ) )
 	geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 )
 		.setUsage( THREE.DynamicDrawUsage ) )
 	geometry.setAttribute( 'size', new THREE.Float32BufferAttribute( sizes, 1 )
@@ -149,8 +164,14 @@ function createParticles() {
 	geometry.setAttribute( 'rotation', new THREE.Float32BufferAttribute( rotations, 1 )
 		.setUsage( THREE.DynamicDrawUsage ) )
 	
-	//geometry.computeBoundingSphere()
-	//geometry.computeBoundingBox()
+	geometry.attributes.color.needsUpdate = true
+	geometry.attributes.position.needsUpdate = true
+	geometry.attributes.size.needsUpdate = true
+	geometry.attributes.rotation.needsUpdate = true
+	
+	// geometry.computeBoundingSphere()
+	// geometry.computeBoundingBox()
+	// geometry.computeVertexNormals()
 	
 	shaderMaterial.needsUpdate = true
 	
@@ -314,11 +335,11 @@ function startShow() {
 		uavTweening = false
 	})
 
-	// cameraTween.onComplete(() => {
-	// 	cameraTweening = false
-	// 	controls.minPolarAngle = THREE.Math.degToRad( 100 )
-	// 	controls.maxPolarAngle = THREE.Math.degToRad( 180 )
-	// })
+	cameraTween.onComplete(() => {
+		cameraTweening = false
+		controls.minPolarAngle = THREE.Math.degToRad( 100 )
+		controls.maxPolarAngle = THREE.Math.degToRad( 180 )
+	})
 
 	animate()
 }
@@ -388,19 +409,21 @@ document.body.appendChild( renderer.domElement )
 
 const controls = new OrbitControls( camera, renderer.domElement )
 
-//controls.enableZoom = false
-// controls.enableDamping = true
-// controls.dampingFactor = .2
-// controls.minDistance = 5
-// controls.maxDistance = 200
+controls.enableZoom = true
+controls.enableDamping = true
+controls.dampingFactor = .2
+controls.minDistance = 5
+controls.maxDistance = 350
+
+var cableGeox = false
 
 function animate() {
 	requestAnimationFrame( animate )
 	TWEEN.update()
 	if ( uavTweening ) {
-		// controls.target.z = uavPos.z * .5
-		// controls.target.x = -uavPos.z * .2
-		// controls.target.y = 0
+		controls.target.z = uavPos.z * .5
+		controls.target.x = -uavPos.z * .2
+		controls.target.y = 0
 
 		scene.remove( cable )
 		cablePoints[2].z = uavPos.z - 2
@@ -413,8 +436,58 @@ function animate() {
 	 	scene.add( cable )
 	}
 	if ( cameraTweening ) {
-	//	camera.position.set( cameraPos.x, cameraPos.y, cameraPos.z )
+		camera.position.set( cameraPos.x, cameraPos.y, cameraPos.z )
+	} else if ( particleSystem.position.x < 190 ) {
+		particleSystem.position.x += .5
+		controls.target.x += .15
+		camera.position.x += .2
+		camera.position.y -= .2
+
+		
+		const sizes = particleSystem.geometry.attributes.size.array
+		const positions = particleSystem.geometry.attributes.position.array
+
+		
+
+		particleSystem.geometry.attributes.position.needsUpdate = true
+		particleSystem.geometry.attributes.size.needsUpdate = true
+		
+
+		if (!cableGeox) {
+			console.log(particleSystem)
+			cableGeox = true
+		}
+		
 	}
+
+	
+	for ( let i = 0; i < particleSystem.geometry.attributes.rotation.count; i++ ) {
+		particleSystem.geometry.attributes.rotation.array[ i ] += .05
+	}
+
+	particleSystem.geometry.attributes.rotation.needsUpdate = true
+
+	const geometry = particleSystem.geometry
+	const attributes = geometry.attributes
+
+	raycaster.setFromCamera( pointer, camera )
+
+	//raycaster.params.Points.threshold = 1
+
+	const intersects = raycaster.intersectObjects( scene.children )
+
+	particleSystem.geometry.attributes.color.needsUpdate = true
+
+	for ( let i = 0; i < intersects.length; i ++ ) {
+
+		if ( intersects[ i ].object.type == 'Points' ) {
+
+			particleSystem.geometry.attributes.color.array[ intersects[ 0 ].index * 4 + 3 ] = 1
+			
+		}
+
+	}
+
 	controls.update()
 	renderer.render( scene, camera )
 	composer.render()
