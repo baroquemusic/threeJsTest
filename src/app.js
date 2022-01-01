@@ -19,7 +19,7 @@ import unmannedAerialVehicle from './assets/uav.glb'
 
 import hdri from './assets/hdri_2k.exr'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass'
-import { AdditiveBlending, LoadingManager, Vector3 } from 'three'
+import { LoadingManager } from 'three'
 
 import { TWEEN } from 'three/examples/jsm/libs/tween.module.min'
 
@@ -46,16 +46,16 @@ const texture = exrLoader.load(
 		scene.background = rendertarget.texture
 } )
 
-// const lightD = new THREE.DirectionalLight( 0xffba00, 0 )
+// const lightD = new THREE.DirectionalLight( 0xffba00, .3 )
 // lightD.position.set( 50, 50, 50 )
-// const lightP = new THREE.PointLight( 0x00d9ff, 0 )
+// const lightP = new THREE.PointLight( 0x00d9ff, .3 )
 // lightP.position.set( -50, 50, -50 )
 // scene.add( lightD )
 // scene.add( lightP )
 
 ///////////////////////// SOLIDS
 
-var matProp = new THREE.MeshLambertMaterial( { color: 0x000000, transparent: true, opacity: .5 } )
+var matProp = new THREE.MeshLambertMaterial( { color: 0x000000, transparent: true, opacity: .3 } )
 var matTire = new THREE.MeshLambertMaterial( { color: 0x0e0e0a } )
 
 var gc
@@ -180,16 +180,16 @@ function startShow() {
 	cableMat.envMap =
 	pmremGenerator.fromCubemap( texture ).texture
 
-	//renderer.physicallyCorrectLights = true
+	renderer.physicallyCorrectLights = true
 	
 	var uavTween = new TWEEN.Tween( uavPos )
 	var uavDist = -100
 	uavTween.to( { z: uavDist }, 10000 )
-	uavTween.easing( TWEEN.Easing.Quadratic.InOut )
+	uavTween.easing( TWEEN.Easing.Quadratic.In )
 
 	var cameraTween = new TWEEN.Tween( cameraPos )
 	cameraTween.to( { x: 100, y: -50, z: -150 }, 10000 )
-	cameraTween.easing( TWEEN.Easing.Quadratic.InOut )
+	cameraTween.easing( TWEEN.Easing.Quadratic.In )
 
 	uavTween.start()
 	cameraTween.start()
@@ -209,6 +209,8 @@ function startShow() {
 	})
 
 	animate()
+	const spinner = document.getElementById( 'spinner' )
+	spinner.remove()
 }
 
 window.addEventListener('resize', onWindowResize, false)
@@ -228,8 +230,6 @@ const renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } )
 renderer.outputEncoding = THREE.sRGBEncoding
 
 renderer.setSize( window.innerWidth, window.innerHeight )
-
-scene.background = new THREE.Color( 0x72ceed )
 
 /////////////////// CABLE
 
@@ -262,13 +262,13 @@ fxaaShader.uniforms.resolution.value.set( 1 / window.innerWidth, 1 / window.inne
 
 const bloomPass = new UnrealBloomPass()
 bloomPass.threshold = 0
-bloomPass.strength = .25
-bloomPass.radius = .25
+bloomPass.strength = .1
+bloomPass.radius = 1
 bloomPass.renderToScreen = false
 
-// composer.addPass( renderPass )
-// composer.addPass( fxaaShader )
-// composer.addPass( bloomPass )
+composer.addPass( renderPass )
+composer.addPass( fxaaShader )
+composer.addPass( bloomPass )
 
 document.body.appendChild( renderer.domElement )
 
@@ -356,12 +356,12 @@ function createParticles() {
 					imageData[ c ] / 255,
 					imageData[ c + 1 ] / 255,
 					imageData[ c + 2 ] / 255,
-					Math.random()
+					Math.random() / 10
 				)
 
 				rotations.push( Math.random() * Math.PI * 2 )
 
-				sizes.push( Math.random() * 5 )
+				sizes.push( Math.random() )
 			}
 			c += 4
 			x++
@@ -416,7 +416,7 @@ function animate() {
 		controls.target.y = 0
 
 		scene.remove( cable )
-		cablePoints[2].z = uavPos.z - 2
+		cablePoints[2].z = uavPos.z - 3
 		cablePoints[1].x = uavPos.z * -.1
 		cablePoints[1].z = uavPos.z * .5
 
@@ -434,47 +434,105 @@ function animate() {
 	} else if ( particleSystem.position.x < 190 ) {
 	
 		particleSystem.position.x += .5
-		controls.target.x += .15
-		camera.position.x += .2
-		camera.position.y -= .2
+		controls.target.x += .23
+		controls.target.y += .01
+		controls.target.z -= .02
+		camera.position.x += .23
+		camera.position.y -= .1
+		camera.position.z -= .1
 
 		raycaster.set( new THREE.Vector3( 10, 0, 0 ), new THREE.Vector3( 0, 0, -1 ) )
 
-		const intersects = raycaster.intersectObjects( scene.children )
+		const intersects = raycaster.intersectObjects( scene.children, false )
 
 		for ( let i = 0; i < intersects.length; i ++ ) {
 
-			if ( intersects[ i ].object.type == 'Points' ) {
+			const pixel = intersects[ i ].index * 4 + 3
 
-				smokepuffs.push( intersects[ i ].index * 4 + 3 )
-				console.log(particleSystem.geometry.attributes.color.value)
-				particleSystem.geometry.attributes.color.needsUpdate = true
+			if ( smokepuffs.indexOf( pixel ) == -1 ) {
+
+				smokepuffs.push( pixel )
 
 			}
 
+			particleSystem.geometry.attributes.color.array[ smokepuffs[ smokepuffs.length - 1] ] = 1
+			particleSystem.geometry.attributes.size.array[ ( smokepuffs[ smokepuffs.length - 1] - 3 ) / 4 ] = 7
+
+			particleSystem.geometry.attributes.color.needsUpdate = true
+			particleSystem.geometry.attributes.size.needsUpdate = true
+
 		}
 	
+	} else {
+
+		uav.position.x -= .5
+		gc.position.x -= .5
+		cable.position.x -= .5
+
 	}
 
 	for ( let i = 0; i < smokepuffs.length; i++ ) {
 
-		if ( particleSystem.geometry.attributes.color.array[ smokepuffs[ i ] ] > .33 ) {
+		if ( particleSystem.geometry.attributes.color.array[ smokepuffs[ i ] ] > .35 ) {
 
-			particleSystem.geometry.attributes.color.array[ smokepuffs[ i ] ] -= .005
-			particleSystem.geometry.attributes.size.array[ ( smokepuffs[ i ] - 3 ) / 4  ] += .05
-			particleSystem.geometry.attributes.rotation.array[ ( smokepuffs[ i ] - 3 ) / 4  ] += .05
+			particleSystem.geometry.attributes.color.array[ smokepuffs[ i ] ] 
+			-= .001
+			particleSystem.geometry.attributes.size.array[ ( smokepuffs[ i ] - 3 ) / 4  ] 
+			+= .1
+			particleSystem.geometry.attributes.rotation.array[ ( smokepuffs[ i ] - 3 ) / 4  ] 
+			+= .05
+			particleSystem.geometry.attributes.position.array[ ( smokepuffs[ i ] - 3 ) / 4  ] 
+			+= ( Math.random() -.5 ) / 50
+			particleSystem.geometry.attributes.position.array[ ( smokepuffs[ i ] - 3 ) / 3  ] 
+			+= ( Math.random() -.5 ) / 50
+			particleSystem.geometry.attributes.position.array[ ( smokepuffs[ i ] - 3 ) / 2  ] 
+			+= ( Math.random() -.5 ) / 50
+			particleSystem.geometry.attributes.position.array[ ( smokepuffs[ i ] - 3 ) ] 
+			+= ( Math.random() -.5 ) / 50
 
-		} else if ( particleSystem.geometry.attributes.color.array[ smokepuffs[ i ] ] > .11 ) {
+		} else if ( particleSystem.geometry.attributes.color.array[ smokepuffs[ i ] ] > .1 ) {
 
-			particleSystem.geometry.attributes.color.array[ smokepuffs[ i ] ] -= .001
-			particleSystem.geometry.attributes.size.array[ ( smokepuffs[ i ] - 3 ) / 4  ] += .025
-			particleSystem.geometry.attributes.rotation.array[ ( smokepuffs[ i ] - 3 ) / 4  ] += .025
+			particleSystem.geometry.attributes.color.array[ smokepuffs[ i ] ] 
+			-= .0002
+			particleSystem.geometry.attributes.size.array[ ( smokepuffs[ i ] - 3 ) / 4  ] 
+			+= .003
+			particleSystem.geometry.attributes.rotation.array[ ( smokepuffs[ i ] - 3 ) / 4  ] 
+			+= .03
+			particleSystem.geometry.attributes.position.array[ ( smokepuffs[ i ] - 3 ) / 4  ] 
+			+= ( Math.random() -.5 ) / 30
+			particleSystem.geometry.attributes.position.array[ ( smokepuffs[ i ] - 3 ) / 3  ] 
+			+= ( Math.random() -.5 ) / 30
+			particleSystem.geometry.attributes.position.array[ ( smokepuffs[ i ] - 3 ) / 2  ] 
+			+= ( Math.random() -.5 ) / 30
+			particleSystem.geometry.attributes.position.array[ ( smokepuffs[ i ] - 3 ) ] 
+			+= ( Math.random() -.5 ) / 30
 
 		} else {
 
-			particleSystem.geometry.attributes.color.array[ smokepuffs[ i ] ] -= .0001
-			particleSystem.geometry.attributes.size.array[ ( smokepuffs[ i ] - 3 ) / 4  ] += .001
-			particleSystem.geometry.attributes.rotation.array[ ( smokepuffs[ i ] - 3 ) / 4  ] += .01
+			particleSystem.geometry.attributes.color.array[ smokepuffs[ i ] ] 
+			-= .0001
+			particleSystem.geometry.attributes.size.array[ ( smokepuffs[ i ] - 3 ) / 4  ] 
+			+= .1
+			particleSystem.geometry.attributes.rotation.array[ ( smokepuffs[ i ] - 3 ) / 4  ] 
+			+= .02
+			particleSystem.geometry.attributes.position.array[ ( smokepuffs[ i ] - 3 ) / 4  ] 
+			+= ( Math.random() -.5 ) / 5
+			particleSystem.geometry.attributes.position.array[ ( smokepuffs[ i ] - 3 ) / 3  ] 
+			+= ( Math.random() -.5 ) / 5
+			particleSystem.geometry.attributes.position.array[ ( smokepuffs[ i ] - 3 ) / 2  ] 
+			+= ( Math.random() -.5 ) / 5
+			particleSystem.geometry.attributes.position.array[ ( smokepuffs[ i ] - 3 ) ] 
+			+= ( Math.random() -.5 ) / 5
+
+			if ( particleSystem.geometry.attributes.color.array[ smokepuffs[ i ] ] <= 0 ) {
+
+				smokepuffs.slice( i, 1 )
+				smokepuffs.slice( ( i - 3) / 4, 1 )
+				smokepuffs.slice( ( i - 3) / 3, 1 )
+				smokepuffs.slice( ( i - 3) / 2, 1 )
+				smokepuffs.slice( i - 3, 1 )
+
+			}
 
 		}
 
