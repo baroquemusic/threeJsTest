@@ -53,139 +53,6 @@ const texture = exrLoader.load(
 // scene.add( lightD )
 // scene.add( lightP )
 
-const raycaster = new THREE.Raycaster()
-const pointer = new THREE.Vector2()
-
-window.addEventListener( 'pointermove', onPointerMove, false )
-
-function onPointerMove( event ) {
-
-	pointer.x = ( event.clientX / window.innerWidth ) * 2 - 1
-	pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1
-
-}
-
-///////////////////// PARTICLE SYSTEM
-
-let particleSystem
-
-const imageWidth = 209
-const imageHeight = 50
-var imageData = null
-
-function createPixelData() {
-
-	var image = document.createElement('img')
-	var canvas = document.createElement('canvas')
-	var context = canvas.getContext('2d')
-
-	image.onload = () => {
-		image.width = canvas.width = imageWidth
-		image.height = canvas.height = imageHeight
-		context.drawImage( image, 0, 0, imageWidth, imageHeight )
-		imageData = context.getImageData( 0, 0, imageWidth, imageHeight ).data
-		createParticles()
-	}
-
-	image.src = skyPrint
-
-}
-
-function createParticles() {
-
-	var c = 0
-	var geometry, x, y, z
-
-	const bufferSize = imageWidth * imageHeight * 3
-	geometry = new THREE.BufferGeometry()
-	var vertices = new Float32Array( bufferSize )
-	vertices = []
-	var vertex = new THREE.Vector3()
-	var colors = new Float32Array( bufferSize )
-	colors = []
-	var sizes = new Float32Array( bufferSize / 3 )
-	sizes = []
-	var rotations = new Float32Array( bufferSize / 3 )
-	rotations = []
-
-	x = imageWidth * -.5
-	y = imageHeight * .5
-	z = 0
-
-	var shaderMaterial  = new THREE.ShaderMaterial( {
-		uniforms: {
-			color: { value: new THREE.Color( 0xffffff ) },
-			pointTexture: { value: new THREE.TextureLoader().load( sprite ) }
-		},
-		vertexShader: document.getElementById( 'vertexShader' ).textContent,
-		fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
-		blending: NormalBlending,
-		transparent: true,
-		depthTest: false
-	} )
-
-	//shaderMaterial.uniforms.pointTexture.needsUpdate = true
-
-	const expandPixels = 1.72
-
-	for ( var i = 0; i < imageHeight; i++ ) {
-		for ( var j = 0; j < imageWidth; j++ ) {
-			if ( imageData[ c + 3 ] > 0 ) {
-
-				vertex.x = x * expandPixels
-				vertex.y = y * expandPixels
-				vertex.z = z
-				vertices.push( vertex.x, vertex.y, vertex.z )
-		
-				colors.push(
-					imageData[ c ] / 255,
-					imageData[ c + 1 ] / 255,
-					imageData[ c + 2 ] / 255,
-					.53 + Math.random() / 10
-				)
-
-				rotations.push( Math.random() * Math.PI * 2 )
-
-				sizes.push( 15 )
-			}
-			c += 4
-			x++
-		}
-		x = imageWidth * -.5
-		y--
-	}
-
-	geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 4 )
-		.setUsage( THREE.DynamicDrawUsage ) )
-	geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 )
-		.setUsage( THREE.DynamicDrawUsage ) )
-	geometry.setAttribute( 'size', new THREE.Float32BufferAttribute( sizes, 1 )
-		.setUsage( THREE.DynamicDrawUsage ) )
-	geometry.setAttribute( 'rotation', new THREE.Float32BufferAttribute( rotations, 1 )
-		.setUsage( THREE.DynamicDrawUsage ) )
-	
-	geometry.attributes.color.needsUpdate = true
-	geometry.attributes.position.needsUpdate = true
-	geometry.attributes.size.needsUpdate = true
-	geometry.attributes.rotation.needsUpdate = true
-	
-	// geometry.computeBoundingSphere()
-	// geometry.computeBoundingBox()
-	// geometry.computeVertexNormals()
-	
-	shaderMaterial.needsUpdate = true
-	
-	particleSystem = new THREE.Points( geometry, shaderMaterial )
-
-	particleSystem.rotation.x = Math.PI / 2
-	particleSystem.position.x = -180
-	particleSystem.position.z = -55
-	
-	scene.add( particleSystem )
-}
-
-createPixelData()
-
 ///////////////////////// SOLIDS
 
 var matProp = new THREE.MeshLambertMaterial( { color: 0x000000, transparent: true, opacity: .5 } )
@@ -352,8 +219,6 @@ function onWindowResize() {
     animate()
 }
 
-scene.add( new THREE.AxesHelper( 100 ) )
-
 const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, .1, 1000 )
 
 camera.position.set( -15, 10, -20 )
@@ -415,11 +280,136 @@ controls.dampingFactor = .2
 controls.minDistance = 5
 controls.maxDistance = 350
 
-var cableGeox = false
+///////////////////// PARTICLE SYSTEM
+
+let particleSystem
+
+const imageWidth = 209
+const imageHeight = 50
+var imageData = null
+
+function createPixelData() {
+
+	var image = document.createElement('img')
+	var canvas = document.createElement('canvas')
+	var context = canvas.getContext('2d')
+
+	image.onload = () => {
+		image.width = canvas.width = imageWidth
+		image.height = canvas.height = imageHeight
+		context.drawImage( image, 0, 0, imageWidth, imageHeight )
+		imageData = context.getImageData( 0, 0, imageWidth, imageHeight ).data
+		createParticles()
+	}
+
+	image.src = skyPrint
+
+}
+
+function createParticles() {
+
+	var c = 0
+	var geometry, x, y, z
+
+	const bufferSize = imageWidth * imageHeight * 3
+	geometry = new THREE.BufferGeometry()
+	var vertices = new Float32Array( bufferSize )
+	vertices = []
+	var vertex = new THREE.Vector3()
+	var colors = new Float32Array( bufferSize )
+	colors = []
+	var sizes = new Float32Array( bufferSize / 3 )
+	sizes = []
+	var rotations = new Float32Array( bufferSize / 3 )
+	rotations = []
+
+	x = imageWidth * -.5
+	y = imageHeight * .5
+	z = 0
+
+	var shaderMaterial  = new THREE.ShaderMaterial( {
+		uniforms: {
+			color: { value: new THREE.Color( 0xffffff ) },
+			pointTexture: { value: new THREE.TextureLoader().load( sprite ) }
+		},
+		vertexShader: document.getElementById( 'vertexShader' ).textContent,
+		fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
+		blending: NormalBlending,
+		transparent: true,
+		depthTest: false
+	} )
+
+	//shaderMaterial.uniforms.pointTexture.needsUpdate = true
+
+	const expandPixels = 1.72
+
+	for ( var i = 0; i < imageHeight; i++ ) {
+		for ( var j = 0; j < imageWidth; j++ ) {
+			if ( imageData[ c + 3 ] > 0 ) {
+
+				vertex.x = x * expandPixels
+				vertex.y = y * expandPixels
+				vertex.z = z
+				vertices.push( vertex.x, vertex.y, vertex.z )
+		
+				colors.push(
+					imageData[ c ] / 255,
+					imageData[ c + 1 ] / 255,
+					imageData[ c + 2 ] / 255,
+					Math.random()
+				)
+
+				rotations.push( Math.random() * Math.PI * 2 )
+
+				sizes.push( Math.random() * 5 )
+			}
+			c += 4
+			x++
+		}
+		x = imageWidth * -.5
+		y--
+	}
+
+	geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 4 )
+		.setUsage( THREE.DynamicDrawUsage ) )
+	geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 )
+		.setUsage( THREE.DynamicDrawUsage ) )
+	geometry.setAttribute( 'size', new THREE.Float32BufferAttribute( sizes, 1 )
+		.setUsage( THREE.DynamicDrawUsage ) )
+	geometry.setAttribute( 'rotation', new THREE.Float32BufferAttribute( rotations, 1 )
+		.setUsage( THREE.DynamicDrawUsage ) )
+	
+	geometry.attributes.color.needsUpdate = true
+	geometry.attributes.position.needsUpdate = true
+	geometry.attributes.size.needsUpdate = true
+	geometry.attributes.rotation.needsUpdate = true
+	
+	shaderMaterial.needsUpdate = true
+	
+	particleSystem = new THREE.Points( geometry, shaderMaterial )
+
+	particleSystem.rotation.x = Math.PI / 2
+	particleSystem.position.x = -180
+	particleSystem.position.z = -55
+	
+	scene.add( particleSystem )
+	
+}
+
+createPixelData()
+
+const raycaster = new THREE.Raycaster()
+
+const smokepuffs = []
+
+/////////////////////////////// ANIMATE
 
 function animate() {
+
 	requestAnimationFrame( animate )
+	
 	TWEEN.update()
+	
 	if ( uavTweening ) {
 		controls.target.z = uavPos.z * .5
 		controls.target.x = -uavPos.z * .2
@@ -434,61 +424,69 @@ function animate() {
  	 	cable = new THREE.Mesh( cableGeo, cableMat )
 		
 	 	scene.add( cable )
+
 	}
+
 	if ( cameraTweening ) {
+
 		camera.position.set( cameraPos.x, cameraPos.y, cameraPos.z )
+	
 	} else if ( particleSystem.position.x < 190 ) {
+	
 		particleSystem.position.x += .5
 		controls.target.x += .15
 		camera.position.x += .2
 		camera.position.y -= .2
 
-		
-		const sizes = particleSystem.geometry.attributes.size.array
-		const positions = particleSystem.geometry.attributes.position.array
+		raycaster.set( new THREE.Vector3( 10, 0, 0 ), new THREE.Vector3( 0, 0, -1 ) )
 
-		
+		const intersects = raycaster.intersectObjects( scene.children )
+
+		for ( let i = 0; i < intersects.length; i ++ ) {
+
+			if ( intersects[ i ].object.type == 'Points' ) {
+
+				smokepuffs.push( intersects[ i ].index * 4 + 3 )
+				console.log(particleSystem.geometry.attributes.color.value)
+				particleSystem.geometry.attributes.color.needsUpdate = true
+
+			}
+
+		}
+	
+	}
+
+	for ( let i = 0; i < smokepuffs.length; i++ ) {
+
+		if ( particleSystem.geometry.attributes.color.array[ smokepuffs[ i ] ] > .33 ) {
+
+			particleSystem.geometry.attributes.color.array[ smokepuffs[ i ] ] -= .005
+			particleSystem.geometry.attributes.size.array[ ( smokepuffs[ i ] - 3 ) / 4  ] += .05
+			particleSystem.geometry.attributes.rotation.array[ ( smokepuffs[ i ] - 3 ) / 4  ] += .05
+
+		} else if ( particleSystem.geometry.attributes.color.array[ smokepuffs[ i ] ] > .11 ) {
+
+			particleSystem.geometry.attributes.color.array[ smokepuffs[ i ] ] -= .001
+			particleSystem.geometry.attributes.size.array[ ( smokepuffs[ i ] - 3 ) / 4  ] += .025
+			particleSystem.geometry.attributes.rotation.array[ ( smokepuffs[ i ] - 3 ) / 4  ] += .025
+
+		} else {
+
+			particleSystem.geometry.attributes.color.array[ smokepuffs[ i ] ] -= .0001
+			particleSystem.geometry.attributes.size.array[ ( smokepuffs[ i ] - 3 ) / 4  ] += .001
+			particleSystem.geometry.attributes.rotation.array[ ( smokepuffs[ i ] - 3 ) / 4  ] += .01
+
+		}
 
 		particleSystem.geometry.attributes.position.needsUpdate = true
+		particleSystem.geometry.attributes.color.needsUpdate = true
 		particleSystem.geometry.attributes.size.needsUpdate = true
-		
+		particleSystem.geometry.attributes.rotation.needsUpdate = true
 
-		if (!cableGeox) {
-			console.log(particleSystem)
-			cableGeox = true
-		}
-		
 	}
-
 	
-	for ( let i = 0; i < particleSystem.geometry.attributes.rotation.count; i++ ) {
-		particleSystem.geometry.attributes.rotation.array[ i ] += .05
-	}
-
-	particleSystem.geometry.attributes.rotation.needsUpdate = true
-
-	const geometry = particleSystem.geometry
-	const attributes = geometry.attributes
-
-	raycaster.setFromCamera( pointer, camera )
-
-	//raycaster.params.Points.threshold = 1
-
-	const intersects = raycaster.intersectObjects( scene.children )
-
-	particleSystem.geometry.attributes.color.needsUpdate = true
-
-	for ( let i = 0; i < intersects.length; i ++ ) {
-
-		if ( intersects[ i ].object.type == 'Points' ) {
-
-			particleSystem.geometry.attributes.color.array[ intersects[ 0 ].index * 4 + 3 ] = 1
-			
-		}
-
-	}
-
 	controls.update()
 	renderer.render( scene, camera )
 	composer.render()
+
 }
