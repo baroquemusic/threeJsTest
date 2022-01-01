@@ -274,7 +274,8 @@ document.body.appendChild( renderer.domElement )
 
 const controls = new OrbitControls( camera, renderer.domElement )
 
-controls.enableZoom = true
+controls.enableZoom = false
+controls.enablePan = false
 controls.enableDamping = true
 controls.dampingFactor = .2
 controls.minDistance = 5
